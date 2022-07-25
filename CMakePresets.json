@@ -23,24 +23,8 @@
          "hidden": true
       },
       {
-         "name": "Debug",
-         "inherits": "default",
-         "cacheVariables": {
-            "CMAKE_BUILD_TYPE": {
-               "type": "STRING",
-               "value": "Debug"
-            }
-         }
-      },
-      {
-         "name": "Release",
-         "inherits": "default",
-         "cacheVariables": {
-            "CMAKE_BUILD_TYPE": {
-               "type": "STRING",
-               "value": "Release"
-            }
-         }
+         "name": "x86_64-redhat-linux",
+         "inherits": "default"
       }
    ]
 }

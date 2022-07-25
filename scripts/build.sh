@@ -5,9 +5,6 @@ REPO_ROOT=`git rev-parse --show-toplevel`
 REPO_NAME=`basename $REPO_ROOT`
 CONTAINER_NAME=$USER-$REPO_NAME
 
-# exit if any command fails
-set -e
-
 ################################################################################
 # Help                                                                         #
 ################################################################################
@@ -15,10 +12,11 @@ Help()
 {
    echo "This project's build script."
    echo
-   echo "Syntax: ./build.sh [-v|-h]"
+   echo "Syntax: ./build.sh [-t|-v|-h]"
    echo "Options:"
-   echo "-v|--verbose Enables verbose output."
-   echo "-h|--help	Prints this usage."
+   echo "-t|--build-type   Indicate a specific build type (Debug, Release, RelWithDebInfo, MinSizeRel)."
+   echo "-v|--verbose      Enables verbose output."
+   echo "-h|--help         Prints this usage."
    echo
 }
 
@@ -35,6 +33,18 @@ while [[ $# -gt 0 ]]; do
    key="$1"
 
    case $key in
+      -t|--build-type)
+         if [ "$2" != "Debug" ] && [ "$2" != "Release" ] && [ "$2" != "RelWithDebInfo" ] && [ "$2" != "MinSizeRel" ]; then
+            echo "Invalid build type provided. Must be one of the following:"
+            echo "   Debug, Release, RelWithDebInfo, MinSizeRel"
+            Help
+            exit
+         fi
+
+         BUILD_TYPE=$2
+         shift
+         shift
+         ;;
       -v|--verbose)
          set -x
          VERBOSE=1
@@ -50,6 +60,9 @@ while [[ $# -gt 0 ]]; do
          ;;
    esac
 done
+
+## exit if any build container setup fails ##
+set -e
 
 ## spin up a new build container if one doesn't exist ##
 if [ ! "$(docker ps -q -f name=$CONTAINER_NAME)" ]; then
@@ -69,31 +82,40 @@ docker cp $REPO_ROOT/apps $CONTAINER_NAME:/tmp/$REPO_NAME/
 docker cp $REPO_ROOT/CMakeLists.txt $CONTAINER_NAME:/tmp/$REPO_NAME/
 docker cp $REPO_ROOT/CMakePresets.json $CONTAINER_NAME:/tmp/$REPO_NAME/
 
-## list of build variants ##
+## list of build targets ##
 declare -a targets=(
+   "x86_64-redhat-linux"
+)
+
+## list of target build types ##
+declare -a types=(
    "Debug"
    "Release"
 )
+
+## if user indicated to only build specific type ##
+if [[ -v BUILD_TYPE ]]; then
+   types=("$BUILD_TYPE")
+fi
 
 ## unset -e to allow us to loop through all of the builds regardless of fail status ##
 unset e
 
 for target in "${targets[@]}"; do
-   ## Create build directories ##
-   docker exec -it -w /tmp/$REPO_NAME $CONTAINER_NAME mkdir -p build/$target
+   for type in "${types[@]}"; do
+      ## Create build directories ##
+      docker exec -it -w /tmp/$REPO_NAME $CONTAINER_NAME mkdir -p build/$target/$type
 
-   ## Configure and generate build environment with CMake ##
-   docker exec -it -w /tmp/$REPO_NAME $CONTAINER_NAME cmake --preset=$target -S . -B build/$target
+      ## Configure and generate build environment with CMake ##
+      docker exec -it -w /tmp/$REPO_NAME $CONTAINER_NAME cmake --preset=$target -DCMAKE_BUILD_TYPE=$type -S . -B build/$target/$type
 
-   ## build ##
-   docker exec -it -w /tmp/$REPO_NAME $CONTAINER_NAME cmake --build build/$target -- VERBOSE=$VERBOSE
+      ## build ##
+      docker exec -it -w /tmp/$REPO_NAME $CONTAINER_NAME cmake --build build/$target/$type -- VERBOSE=$VERBOSE
 
-   ## install to container ##
-   docker exec -it -w /tmp/$REPO_NAME $CONTAINER_NAME cmake --install build/$target --prefix /usr/local
+      ## install to container ##
+      docker exec -it -w /tmp/$REPO_NAME $CONTAINER_NAME cmake --install build/$target/$type --prefix /usr/local
+   done
 done
-
-## turn set -e back on for cleanup ##
-set -e
 
 ## copy build artifacts back to local machine ##
 docker cp $CONTAINER_NAME:/tmp/$REPO_NAME/build $REPO_ROOT/
