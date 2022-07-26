@@ -103,6 +103,7 @@ docker exec -it -w /tmp $CONTAINER_NAME bash -c "mkdir -p $REPO_NAME"
 
 ## copy sources to build container ##
 docker cp $REPO_ROOT/apps $CONTAINER_NAME:/tmp/$REPO_NAME/
+docker cp $REPO_ROOT/proto $CONTAINER_NAME:/tmp/$REPO_NAME/
 docker cp $REPO_ROOT/CMakeLists.txt $CONTAINER_NAME:/tmp/$REPO_NAME/
 docker cp $REPO_ROOT/CMakePresets.json $CONTAINER_NAME:/tmp/$REPO_NAME/
 
@@ -140,9 +141,6 @@ for target in "${targets[@]}"; do
       docker exec -it -w /tmp/$REPO_NAME $CONTAINER_NAME cmake --install build/$target/$type --prefix /usr/local
    done
 done
-
-## copy build artifacts back to local machine ##
-docker cp $CONTAINER_NAME:/tmp/$REPO_NAME/build $REPO_ROOT/
 
 # stop the build container
 docker stop $CONTAINER_NAME &> /dev/null

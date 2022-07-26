@@ -9,34 +9,30 @@ set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-add_executable(hello_world apps/hello_world.cpp)
-add_executable(multipart_messages apps/multipart_messages.cpp)
-add_executable(pubsub_multithreaded_inproc apps/pubsub_multithreaded_inproc.cpp)
+add_subdirectory(proto)
 
-set_target_properties(hello_world PROPERTIES DEBUG_POSTFIX "-dbg")
-set_target_properties(multipart_messages PROPERTIES DEBUG_POSTFIX "-dbg")
-set_target_properties(pubsub_multithreaded_inproc PROPERTIES DEBUG_POSTFIX "-dbg")
+add_executable(request-reply-client apps/request-reply-client.cpp)
+add_executable(request-reply-server apps/request-reply-server.cpp)
+
+set_target_properties(request-reply-client PROPERTIES DEBUG_POSTFIX "-dbg")
+set_target_properties(request-reply-server PROPERTIES DEBUG_POSTFIX "-dbg")
 
 add_library(libzmq SHARED IMPORTED)
 set_target_properties(libzmq PROPERTIES IMPORTED_LOCATION "/usr/local/lib64/libzmq.so.5")
 
-target_link_libraries(hello_world
+target_link_libraries(request-reply-client
    PRIVATE
+      internalMsgs
       libzmq)
 
-target_link_libraries(multipart_messages
+target_link_libraries(request-reply-server
    PRIVATE
+      internalMsgs
       libzmq)
-
-target_link_libraries(pubsub_multithreaded_inproc
-   PRIVATE
-      libzmq
-      pthread)
 
 install(
    TARGETS
-      hello_world
-      multipart_messages
-      pubsub_multithreaded_inproc
+      request-reply-client
+      request-reply-server
    RUNTIME DESTINATION 
       bin)
