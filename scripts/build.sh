@@ -12,8 +12,9 @@ Help()
 {
    echo "This project's build script."
    echo
-   echo "Syntax: ./build.sh [-t|-v|-h]"
+   echo "Syntax: ./build.sh [-i|-t|-v|-h]"
    echo "Options:"
+   echo "-i|--build-image  Docker image to use for building (<imageName> or <imageName>:<version>)."
    echo "-t|--build-type   Indicate a specific build type (Debug, Release, RelWithDebInfo, MinSizeRel)."
    echo "-v|--verbose      Enables verbose output."
    echo "-h|--help         Prints this usage."
@@ -33,6 +34,21 @@ while [[ $# -gt 0 ]]; do
    key="$1"
 
    case $key in
+      -i|--build-image)
+         BUILD_IMAGE=$2
+
+         # check if this image exists
+         docker image inspect $BUILD_IMAGE &> /dev/null
+         if [ $? -ne 0 ]; then
+            echo "Provided build image: $BUILD_IMAGE does not exist. Exiting..."
+            echo
+            Help
+            exit
+         fi
+
+         shift
+         shift
+         ;;
       -t|--build-type)
          if [ "$2" != "Debug" ] && [ "$2" != "Release" ] && [ "$2" != "RelWithDebInfo" ] && [ "$2" != "MinSizeRel" ]; then
             echo "Invalid build type provided. Must be one of the following:"
@@ -61,6 +77,14 @@ while [[ $# -gt 0 ]]; do
    esac
 done
 
+## User must provide build image to use ##
+if [ ! -v BUILD_IMAGE ]; then
+   echo "A build image must be provided. Exiting..."
+   echo
+   Help
+   exit
+fi
+
 ## exit if any build container setup fails ##
 set -e
 
@@ -68,10 +92,10 @@ set -e
 if [ ! "$(docker ps -q -f name=$CONTAINER_NAME)" ]; then
    if [ "$(docker ps -aq -f status=exited -f name=$CONTAINER_NAME)" ]; then
       # remove old container if one existed
-      docker rm $CONTAINER_NAME
+      docker rm $CONTAINER_NAME &> /dev/null
    fi
    # run a new container
-   docker run -d -it --name $CONTAINER_NAME $USER/redhat-dev
+   docker run -d -it --name $CONTAINER_NAME $BUILD_IMAGE &> /dev/null
 fi
 
 ## create a directory in the container for sources ##
@@ -121,4 +145,4 @@ done
 docker cp $CONTAINER_NAME:/tmp/$REPO_NAME/build $REPO_ROOT/
 
 # stop the build container
-docker stop $CONTAINER_NAME
+docker stop $CONTAINER_NAME &> /dev/null

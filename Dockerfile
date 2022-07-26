@@ -24,16 +24,20 @@ RUN yum install -y git
 ## https://github.com/zeromq/cppzmq ##
 # build libzmq
 RUN \
-   git clone https://github.com/zeromq/libzmq.git /tmp/libzmq && \
-   mkdir /tmp/libzmq/build && \
-   cmake -S /tmp/libzmq -B /tmp/libzmq/build && \
-   make -C /tmp/libzmq/build -j4 install && \
-   rm -rf /tmp/libzmq
+   cd /tmp && \
+   curl -L -O https://github.com/zeromq/libzmq/releases/download/v4.3.4/zeromq-4.3.4.tar.gz && \
+   tar -xzf zeromq-4.3.4.tar.gz && \
+   mkdir /tmp/zeromq-4.3.4/build && \
+   cmake -S /tmp/zeromq-4.3.4 -B /tmp/zeromq-4.3.4/build && \
+   make -C /tmp/zeromq-4.3.4/build -j4 install && \
+   rm -rf /tmp/zeromq-4.3.4*
 
 # build cppzmq
 RUN \
-   git clone https://github.com/zeromq/cppzmq.git /tmp/cppzmq && \
-   mkdir /tmp/cppzmq/build && \
-   cmake -S /tmp/cppzmq -B /tmp/cppzmq/build && \
-   make -C /tmp/cppzmq/build -j4 install && \
-   rm -rf /tmp/cppzmq
+   cd /tmp && \
+   curl -L -o /tmp/cppzmq-4.8.1.tar.gz https://github.com/zeromq/cppzmq/archive/refs/tags/v4.8.1.tar.gz && \
+   tar -xzf cppzmq-4.8.1.tar.gz && \
+   mkdir /tmp/cppzmq-4.8.1/build && \
+   cmake -S /tmp/cppzmq-4.8.1 -B /tmp/cppzmq-4.8.1/build && \
+   make -C /tmp/cppzmq-4.8.1/build -j4 install && \
+   rm -rf /tmp/cppzmq-4.8.1*
