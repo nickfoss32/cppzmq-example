@@ -179,6 +179,3 @@ for target in "${targets[@]}"; do
       docker exec -it -w /tmp/$REPO_NAME $CONTAINER_NAME cmake --install build/$target/$type --prefix /usr/local
    done
 done
-
-# stop the build container
-# docker stop $CONTAINER_NAME &> /dev/null
