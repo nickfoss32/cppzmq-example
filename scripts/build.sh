@@ -12,13 +12,14 @@ Help()
 {
    echo "This project's build script."
    echo
-   echo "Syntax: ./build.sh [-i|-t|-n|-c|-v|-h]"
+   echo "Syntax: ./build.sh [-i|-t|-n|-a|-c|-v|-h]"
    echo "Required:"
    echo "   -i|--build-image     Docker image to use for building (<imageName> or <imageName>:<version>)."
    echo
    echo "Options:"
    echo "   -t|--build-type      Indicate a specific build type (Debug, Release, RelWithDebInfo, MinSizeRel)."
    echo "   -n|--container-name  Name of application container."
+   echo "   -a|--ip-address      IP address to assign to the container."
    echo "   -c|--clean           Performs a clean build."
    echo "   -v|--verbose         Enables verbose output."
    echo "   -h|--help            Prints this usage."
@@ -55,7 +56,7 @@ while [[ $# -gt 0 ]]; do
          ;;
       -t|--build-type)
          if [ "$2" != "Debug" ] && [ "$2" != "Release" ] && [ "$2" != "RelWithDebInfo" ] && [ "$2" != "MinSizeRel" ]; then
-            echo "Invalid build type provided. Must be one of the following:"
+            echo "Invalid build type provided: $2. Must be one of the following:"
             echo "   Debug, Release, RelWithDebInfo, MinSizeRel"
             Help
             exit
@@ -67,6 +68,18 @@ while [[ $# -gt 0 ]]; do
          ;;
       -n|--container-name)
          CONTAINER_NAME=$2
+         shift
+         shift
+         ;;
+      -a|--ip-address)
+         if [[ $2 =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            IP_ADDR=--ip $2
+         else
+            echo "Error - malformed IP string provided: $2"
+            echo
+            Help
+            exit
+         fi
          shift
          shift
          ;;
@@ -105,7 +118,7 @@ if docker inspect $CONTAINER_NAME &> /dev/null; then
    if [ -v CLEAN_BUILD ]; then
       docker stop $CONTAINER_NAME &> /dev/null
       docker rm $CONTAINER_NAME &> /dev/null
-      docker run -d -it --name $CONTAINER_NAME $BUILD_IMAGE &> /dev/null
+      docker run -d -it $IP_ADDR --name $CONTAINER_NAME $BUILD_IMAGE &> /dev/null
    
    ## if a clean build wasn't requested, we need to check if it is stopped or not ##
    else
@@ -117,7 +130,7 @@ if docker inspect $CONTAINER_NAME &> /dev/null; then
 
 ## requested container doesnt exist - spin up a new one ##
 else
-   docker run -d -it --name $CONTAINER_NAME $BUILD_IMAGE &> /dev/null
+   docker run -d -it $IP_ADDR --name $CONTAINER_NAME $BUILD_IMAGE &> /dev/null
 fi
 
 ## exit if any build container setup fails ##

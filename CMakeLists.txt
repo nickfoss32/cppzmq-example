@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.23)
 
 project(cppzmq-example)
 
+find_package(Boost 1.79 REQUIRED COMPONENTS program_options)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -17,18 +19,28 @@ add_executable(request-reply-server apps/request-reply-server.cpp)
 set_target_properties(request-reply-client PROPERTIES DEBUG_POSTFIX "-dbg")
 set_target_properties(request-reply-server PROPERTIES DEBUG_POSTFIX "-dbg")
 
+target_include_directories(request-reply-client
+   PRIVATE
+      ${Boost_INCLUDE_DIRS})
+
+target_include_directories(request-reply-server
+   PRIVATE
+      ${Boost_INCLUDE_DIRS})
+
 add_library(libzmq SHARED IMPORTED)
-set_target_properties(libzmq PROPERTIES IMPORTED_LOCATION "/usr/local/lib64/libzmq.so.5")
+set_target_properties(libzmq PROPERTIES IMPORTED_LOCATION "/usr/local/lib64/libzmq.so")
 
 target_link_libraries(request-reply-client
    PRIVATE
       internalMsgs
-      libzmq)
+      libzmq
+      Boost::program_options)
 
 target_link_libraries(request-reply-server
    PRIVATE
       internalMsgs
-      libzmq)
+      libzmq
+      Boost::program_options)
 
 install(
    TARGETS

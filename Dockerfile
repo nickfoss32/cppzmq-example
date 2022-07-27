@@ -21,6 +21,17 @@ RUN yum install -y libstdc++
 # install git
 RUN yum install -y git
 
+## build and install boost ##
+## https://www.boost.org/doc/libs/1_79_0/more/getting_started/unix-variants.html ##
+RUN \
+   cd /tmp && \
+   curl -L -o /tmp/boost_1_79_0.tar.gz https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0.tar.gz && \
+   tar -xzf boost_1_79_0.tar.gz && \
+   cd /tmp/boost_1_79_0 && \
+   ./bootstrap.sh && \
+   ./b2 install && \
+   rm -rf /tmp/boost*
+
 ## install zeroMQ ##
 ## https://github.com/zeromq/cppzmq ##
 
