@@ -15,15 +15,27 @@ add_subdirectory(proto)
 
 add_executable(request-reply-client apps/request-reply-client.cpp)
 add_executable(request-reply-server apps/request-reply-server.cpp)
+add_executable(pub-sub-publisher apps/pub-sub-publisher.cpp)
+add_executable(pub-sub-subscriber apps/pub-sub-subscriber.cpp)
 
 set_target_properties(request-reply-client PROPERTIES DEBUG_POSTFIX "-dbg")
 set_target_properties(request-reply-server PROPERTIES DEBUG_POSTFIX "-dbg")
+set_target_properties(pub-sub-publisher PROPERTIES DEBUG_POSTFIX "-dbg")
+set_target_properties(pub-sub-subscriber PROPERTIES DEBUG_POSTFIX "-dbg")
 
 target_include_directories(request-reply-client
    PRIVATE
       ${Boost_INCLUDE_DIRS})
 
 target_include_directories(request-reply-server
+   PRIVATE
+      ${Boost_INCLUDE_DIRS})
+
+target_include_directories(pub-sub-publisher
+   PRIVATE
+      ${Boost_INCLUDE_DIRS})
+
+target_include_directories(pub-sub-subscriber
    PRIVATE
       ${Boost_INCLUDE_DIRS})
 
@@ -42,9 +54,23 @@ target_link_libraries(request-reply-server
       libzmq
       Boost::program_options)
 
+target_link_libraries(pub-sub-publisher
+   PRIVATE
+      internalMsgs
+      libzmq
+      Boost::program_options)
+
+target_link_libraries(pub-sub-subscriber
+   PRIVATE
+      internalMsgs
+      libzmq
+      Boost::program_options)
+
 install(
    TARGETS
       request-reply-client
       request-reply-server
+      pub-sub-publisher
+      pub-sub-subscriber
    RUNTIME DESTINATION 
       bin)
