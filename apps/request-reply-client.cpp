@@ -51,9 +51,8 @@ int main (int argc, char** argv)
    std::cout << "Connected!" << std::endl;
 
    //  Do 10 requests, waiting each time for a response
-   for (int request_nbr = 0; request_nbr != 10; request_nbr++) {
-      std::cout << std::endl << "Request number: " << request_nbr << std::endl;
-
+   for (int request_nbr = 0; request_nbr != 10; request_nbr++)
+   {
       // build the proto object to send to the server
       messages::Message requestMsg;
       requestMsg.set_msgtype(messages::Message_MessageType_A);
@@ -64,18 +63,19 @@ int main (int argc, char** argv)
       requestMsg.SerializeToString(&binaryData);
 
       // send the request to the server
-      std::cout << "Sending: " << requestMsg.text() <<  "..." << std::endl;
+      std::cout << std::endl << "Sending request[" << request_nbr << "]: " << requestMsg.text() << "..." << std::endl;
       socket.send (zmq::buffer(binaryData), zmq::send_flags::none);
 
       // Wait for the server to reply
       zmq::message_t reply;
+      std::cout << "Awaiting reply..." << std::endl;
       socket.recv(reply, zmq::recv_flags::none);
 
       // deserialize binary data into proto object
       messages::Message replyMsg;
       replyMsg.ParseFromArray(reply.data(), reply.size());
 
-      std::cout << "Received: " << replyMsg.text() << std::endl;
+      std::cout << "Received reply: " << replyMsg.text() << std::endl;
    }
 
    return 0;

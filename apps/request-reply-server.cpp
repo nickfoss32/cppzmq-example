@@ -53,15 +53,17 @@ int main (int argc, char** argv) {
       zmq::message_t request;
 
       //  Wait for next request from client
+      std::cout << std::endl << "Listening for requests..." << std::endl;
       socket.recv (request, zmq::recv_flags::none);
 
       // deserialize binary data into proto object
       messages::Message requestMsg;
       requestMsg.ParseFromArray(request.data(), request.size());
 
-      std::cout << std::endl << "Received: " << requestMsg.text() << std::endl;
+      std::cout << "Received request: " << requestMsg.text() << std::endl;
 
       //  Do some 'work'
+      std::cout << "Processing the request..." << std::endl;
       sleep(1);
 
       // build the proto object to send back to the client
@@ -74,7 +76,7 @@ int main (int argc, char** argv) {
       replyMsg.SerializeToString(&binaryData);
 
       // send the request to the server
-      std::cout << "Sending: " << replyMsg.text() <<  "..." << std::endl;
+      std::cout << "Sending reply: " << replyMsg.text() <<  "..." << std::endl;
       socket.send (zmq::buffer(binaryData), zmq::send_flags::none);
    }
    
