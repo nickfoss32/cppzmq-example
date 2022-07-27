@@ -12,12 +12,16 @@ Help()
 {
    echo "This project's build script."
    echo
-   echo "Syntax: ./build.sh [-i|-t|-v|-h]"
+   echo "Syntax: ./build.sh [-i|-t|-n|-c|-v|-h]"
+   echo "Required:"
+   echo "   -i|--build-image     Docker image to use for building (<imageName> or <imageName>:<version>)."
+   echo
    echo "Options:"
-   echo "-i|--build-image  Docker image to use for building (<imageName> or <imageName>:<version>)."
-   echo "-t|--build-type   Indicate a specific build type (Debug, Release, RelWithDebInfo, MinSizeRel)."
-   echo "-v|--verbose      Enables verbose output."
-   echo "-h|--help         Prints this usage."
+   echo "   -t|--build-type      Indicate a specific build type (Debug, Release, RelWithDebInfo, MinSizeRel)."
+   echo "   -n|--container-name  Name of application container."
+   echo "   -c|--clean           Performs a clean build."
+   echo "   -v|--verbose         Enables verbose output."
+   echo "   -h|--help            Prints this usage."
    echo
 }
 
@@ -61,6 +65,15 @@ while [[ $# -gt 0 ]]; do
          shift
          shift
          ;;
+      -n|--container-name)
+         CONTAINER_NAME=$2
+         shift
+         shift
+         ;;
+      -c|--clean)
+         CLEAN_BUILD=1
+         shift
+         ;;
       -v|--verbose)
          set -x
          VERBOSE=1
@@ -85,18 +98,30 @@ if [ ! -v BUILD_IMAGE ]; then
    exit
 fi
 
-## exit if any build container setup fails ##
-set -e
+## check if the requested container already exists ##
+if docker inspect $CONTAINER_NAME &> /dev/null; then
 
-## spin up a new build container if one doesn't exist ##
-if [ ! "$(docker ps -q -f name=$CONTAINER_NAME)" ]; then
-   if [ "$(docker ps -aq -f status=exited -f name=$CONTAINER_NAME)" ]; then
-      # remove old container if one existed
+   ## if a clean build was requested on an already-existing container, stop it, remove it, then spin up a new one ##
+   if [ -v CLEAN_BUILD ]; then
+      docker stop $CONTAINER_NAME &> /dev/null
       docker rm $CONTAINER_NAME &> /dev/null
+      docker run -d -it --name $CONTAINER_NAME $BUILD_IMAGE &> /dev/null
+   
+   ## if a clean build wasn't requested, we need to check if it is stopped or not ##
+   else
+      ## check if requested container is stopped ##
+      if [[ "exited" == `docker inspect $CONTAINER_NAME | grep Status | cut -d ':' -f 2 | sed 's/,//' | xargs` ]]; then
+         docker start $CONTAINER_NAME &> /dev/null
+      fi
    fi
-   # run a new container
+
+## requested container doesnt exist - spin up a new one ##
+else
    docker run -d -it --name $CONTAINER_NAME $BUILD_IMAGE &> /dev/null
 fi
+
+## exit if any build container setup fails ##
+set -e
 
 ## create a directory in the container for sources ##
 docker exec -it -w /tmp $CONTAINER_NAME bash -c "mkdir -p $REPO_NAME"
@@ -143,4 +168,4 @@ for target in "${targets[@]}"; do
 done
 
 # stop the build container
-docker stop $CONTAINER_NAME &> /dev/null
+# docker stop $CONTAINER_NAME &> /dev/null
