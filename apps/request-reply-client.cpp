@@ -55,7 +55,6 @@ int main (int argc, char** argv)
    {
       // build the proto object to send to the server
       messages::Message requestMsg;
-      requestMsg.set_msgtype(messages::Message_MessageType_A);
       requestMsg.set_text("Hello");
 
       // serialize the proto object into binary data (stored in std::string)

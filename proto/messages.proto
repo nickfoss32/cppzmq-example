@@ -4,12 +4,7 @@ package messages;
 
 message Message {
 
-   enum MessageType{
-      A = 0;
-      B = 1;
-      C = 2;
-   }
+   optional string msgType = 1;
+   optional string text = 2;
 
-   MessageType msgType = 1;
-   string text = 2;
 }

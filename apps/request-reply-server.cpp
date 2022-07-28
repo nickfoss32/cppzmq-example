@@ -68,7 +68,6 @@ int main (int argc, char** argv) {
 
       // build the proto object to send back to the client
       messages::Message replyMsg;
-      replyMsg.set_msgtype(messages::Message_MessageType_A);
       replyMsg.set_text("World");
 
       // serialize the proto object into binary data (stored in std::string)

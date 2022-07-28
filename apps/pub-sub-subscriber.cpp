@@ -1,10 +1,9 @@
 #include <iostream>
 #include <string>
-#include <vector>
 #include <unistd.h>
 
 #include <boost/program_options.hpp>
-
+#include <google/protobuf/text_format.h>
 #include <zmq.hpp>
 
 #include "proto/messages.pb.h"
@@ -40,12 +39,6 @@ int main (int argc, char** argv) {
       return 1;
    }
 
-   if (!vm.count("types"))
-   {
-      std::cout << "No subscription requests were provided.\n";
-      return 1;
-   }
-
    // Verify that the version of the library that we linked against is
    // compatible with the version of the headers we compiled against.
    GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -55,16 +48,19 @@ int main (int argc, char** argv) {
    zmq::socket_t subscriber (context, zmq::socket_type::sub);
 
    //subscribe to messages we care about
-   // TODO: need to figure out specific subscriptions still...
-   subscriber.set(zmq::sockopt::subscribe, "");
-   // for (std::vector<std::string>::const_iterator it = vm["types"].as<std::vector<std::string>>().begin(); it != vm["types"].as<std::vector<std::string>>().end(); ++it)
-   // {
-   //    messages::Message_MessageType msgType;
-   //    msgType = (*it == "A" ? messages::Message_MessageType_A : (*it == "B" ? messages::Message_MessageType_B : messages::Message_MessageType_C) );
-
-   //    subscriber.setsockopt(ZMQ_SUBSCRIBE, msgType);
-   //    std::cout << "Subscribed to msg type: " << msgType << "" << std::endl;
-   // }
+   if (!vm.count("types"))
+   {
+      std::cout << "No subscription requests were provided. Subscribing to all messages.\n";
+      subscriber.set(zmq::sockopt::subscribe, "");
+   }
+   else
+   {
+      for (std::vector<std::string>::const_iterator it = vm["types"].as<std::vector<std::string>>().begin(); it != vm["types"].as<std::vector<std::string>>().end(); ++it)
+      {
+         subscriber.set(zmq::sockopt::subscribe, *it);
+         std::cout << "Subscribed to msg type: " << *it << "" << std::endl;
+      }
+   }
 
    sleep(1);
 
@@ -85,10 +81,12 @@ int main (int argc, char** argv) {
       messages::Message msgData;
       msgData.ParseFromArray(msg.data(), msg.size());
 
-      // send the request to the server
-      std::cout << "Received msg[" << msgCount << "] " << "w/ type: " << msgData.msgtype() << "," << " payload: \"" << msgData.text() << "\"" << std::endl;
+      // log what was received
+      std::string printableData;
+      google::protobuf::TextFormat::PrintToString(msgData, &printableData);
+      std::cout << "Received msg[" << msgCount << "]:" << std::endl << printableData << std::endl;
 
-      // log the message was sent
+      // log the msg was received
       msgCount++;
    }
    

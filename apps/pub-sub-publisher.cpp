@@ -1,9 +1,9 @@
-#include <string>
 #include <iostream>
+#include <string>
 #include <unistd.h>
 
 #include <boost/program_options.hpp>
-
+#include <google/protobuf/text_format.h>
 #include <zmq.hpp>
 
 #include "proto/messages.pb.h"
@@ -56,16 +56,16 @@ int main (int argc, char** argv) {
       
       if (msgCount % 5 == 0)
       {
-         msg.set_msgtype(messages::Message_MessageType_C);
+         msg.set_msgtype("C");
          msg.set_text("This is a type C message.");
       }
       else if (msgCount % 2 == 0) {
-         msg.set_msgtype(messages::Message_MessageType_A);
+         msg.set_msgtype("A");
          msg.set_text("This is a type A message.");
       }
       else
       {
-         msg.set_msgtype(messages::Message_MessageType_B);
+         msg.set_msgtype("B");
          msg.set_text("This is a type B message.");
       }
 
@@ -74,7 +74,9 @@ int main (int argc, char** argv) {
       msg.SerializeToString(&binaryData);
 
       // send the request out to all interested parties
-      std::cout << "Publishing msg[" << msgCount << "] " << "w/ type: " << msg.msgtype() << "," << " payload: \"" << msg.text() << "\"" <<  "..." << std::endl;
+      std::string printableData;
+      google::protobuf::TextFormat::PrintToString(msg, &printableData);
+      std::cout << "Publishing msg[" << msgCount << "]: " << std::endl << printableData << std::endl;
       publisher.send(zmq::buffer(binaryData), zmq::send_flags::none);
 
       // log the message was sent
